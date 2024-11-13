@@ -2,9 +2,15 @@
 import { KeyboardEvent, ChangeEvent, useState, useEffect } from "react";
 import { TodoItem } from "./components/TodoItem";
 
+interface Tasks {
+  id: number;
+  value: string;
+  isCompleted: boolean;
+}
+
 export default function Home() {
   const [value, setValue] = useState<string>("");
-  const [tasks, setTasks] = useState<string[]>([]);
+  const [tasks, setTasks] = useState<Tasks[]>([]);
 
   function changeValue(event: ChangeEvent<HTMLInputElement>) {
     setValue(event.target.value);
@@ -21,8 +27,13 @@ export default function Home() {
 
   function addTask() {
     if (value.trim() !== "") {
+      const newTask: Tasks = {
+        id: Date.now(),
+        value: value,
+        isCompleted: false,
+      };
       const existTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-      const updatedTasks = [...existTasks, value];
+      const updatedTasks = [...existTasks, newTask];
       localStorage.setItem("tasks", JSON.stringify(updatedTasks));
       setValue("");
       getTask();
@@ -33,6 +44,20 @@ export default function Home() {
     if (event.key === "Enter") {
       addTask();
     }
+  }
+
+  function deleteTask(id: number) {
+    const updatedTasks = tasks.filter((task) => task.id !== id);
+    setTasks(updatedTasks);
+    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
+  }
+
+  function checkTask(id: number) {
+    const TASK = tasks.map((task) => 
+      task.id === id ? {...task, isCompleted: !task.isCompleted} : task
+    )
+    setTasks(TASK)
+    localStorage.setItem("tasks", JSON.stringify(TASK))
   }
 
   return (
@@ -66,7 +91,14 @@ export default function Home() {
                 Nothing to do...
               </div>
             ) : (
-              tasks.map((task, index) => <TodoItem task={task} key={index} />)
+              tasks.map((task) => (
+                <TodoItem
+                  checkItem={checkTask}
+                  deleteItem={deleteTask}
+                  task={task}
+                  key={task.id}
+                />
+              ))
             )}
           </div>
         </div>
